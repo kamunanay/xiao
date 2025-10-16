@@ -7,7 +7,7 @@ const {
 } = require("@whiskeysockets/baileys");
 
 const qrcode = require("qrcode-terminal");
-const chalk = require("chalk");
+import chalk from "chalk";
 const pino = require("pino");
 const { Boom } = require("@hapi/boom");
 const moment = require("moment");
