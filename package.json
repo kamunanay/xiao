@@ -1,7 +1,7 @@
 {
   "name": "xiao-whatsapp-bot",
   "version": "1.0.0",
-  "description": "WhatsApp Bot stable via Termux (Baileys MultiDevice + QR Login + TikTok downloader + Auto Reaction)",
+  "description": "XIAO-BOT - WhatsApp Bot Multi-Device via Termux dengan auto reply, emoji reaction & TikTok downloader.",
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
@@ -10,7 +10,7 @@
     "clean": "rm -rf node_modules package-lock.json && npm install"
   },
   "dependencies": {
-    "@adiwajshing/baileys": "^6.6.0",
+    "@whiskeysockets/baileys": "^6.7.7",
     "@hapi/boom": "^10.0.1",
     "axios": "^1.7.2",
     "chalk": "^5.3.0",
@@ -26,14 +26,6 @@
   "engines": {
     "node": ">=16.0.0"
   },
-  "keywords": [
-    "whatsapp-bot",
-    "baileys",
-    "termux",
-    "tiktok-downloader",
-    "auto-reply",
-    "whatsapp"
-  ],
   "author": "XiaoBot",
   "license": "MIT"
 }
