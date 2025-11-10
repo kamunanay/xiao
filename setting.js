@@ -1,6 +1,7 @@
 module.exports = {
   prefix: ".",
   botName: "XIAO-BOT",
+  ownerNumber: '6288276936300', // Ganti dengan nomor owner
 
   // 🗨️ Auto reply — teks: balasan
   autoReplies: {
