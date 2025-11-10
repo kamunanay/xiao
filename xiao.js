@@ -3,7 +3,7 @@ const {
     useMultiFileAuthState,
     delay,
     Browsers 
-} = require('@otaxayun/baileys');
+} = require('@whiskeysockets/baileys');
 const fs = require('fs');
 const path = require('path');
 const pino = require('pino');
