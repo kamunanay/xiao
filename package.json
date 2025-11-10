@@ -1,42 +1,30 @@
 {
-  "name": "xiao-whatsapp-bot",
-  "version": "1.0.0",
-  "description": "XIAO-BOT - WhatsApp Bot Multi-Device via Termux dengan auto reply, emoji reaction & TikTok downloader.",
+  "name": "xiao-bot",
+  "version": "2025.1.0",
+  "description": " 小舞 Ga - WhatsApp Multi-Device Bot",
   "main": "index.js",
-  "type": "commonjs",
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "clean": "rm -rf node_modules package-lock.json && npm install"
+    "test": "node --check index.js",
+    "install-deps": "npm install colors @whiskeysockets/baileys axios form-data pino"
   },
-   "dependencies": {
-    "@hapi/boom": "^10.0.1",
-    "@otaxayun/baileys" : "latest",
-    "adm-zip": "^0.5.10",
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "multi-device",
+    "automation"
+  ],
+  "author": "小舞 Ga",
+  "license": "MIT",
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.5.0",
     "axios": "^1.6.2",
-    "body-parser": "^1.20.2",
-    "chalk": "^4.1.2",
-    "cookie-parser": "^1.4.6",
-    "express": "^4.18.2",
-    "fs-extra": "^11.2.0",
-    "nodemailer": "^6.9.7",
-    "pino": "^8.17.2",
-    "tar": "^6.2.1",
-    "@hapi/boom": "^10.0.1",
-    "axios": "^1.7.2",
-    "chalk": "^5.3.0",
-    "fs-extra": "^11.1.1",
-    "moment": "^2.30.1",
-    "node-fetch": "^3.3.2",
-    "pino": "^8.14.1",
-    "qrcode-terminal": "^0.12.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.0"
+    "colors": "^1.4.0",
+    "form-data": "^4.0.0",
+    "pino": "^8.15.3"
   },
   "engines": {
     "node": ">=16.0.0"
-  },
-  "author": "XiaoBot",
-  "license": "MIT"
+  }
 }
