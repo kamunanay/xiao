@@ -14,6 +14,9 @@ const { prefix, botName, ownerNumber, autoReplies, chatReactions, statusReaction
 
 // Global variables
 let sock = null;
+let isConnected = false;
+let reconnectAttempts = 0;
+const maxReconnectAttempts = 3;
 const sessionsDir = './sessions';
 
 // === SIMPLE BANNER ===
@@ -54,91 +57,113 @@ async function downloadMedia(sock, msg) {
 
 // === STABLE WHATSAPP CONNECTION ===
 async function connectToWhatsApp() {
-    try {
-        const sessionPath = path.join(sessionsDir, 'session');
-        if (!fs.existsSync(sessionPath)) {
-            fs.mkdirSync(sessionPath, { recursive: true });
+    return new Promise(async (resolve, reject) => {
+        try {
+            const sessionPath = path.join(sessionsDir, 'session');
+            if (!fs.existsSync(sessionPath)) {
+                fs.mkdirSync(sessionPath, { recursive: true });
+            }
+
+            const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
+
+            const newSock = makeWASocket({
+                auth: state,
+                logger: pino({ level: 'fatal' }),
+                printQRInTerminal: false,
+                connectTimeoutMs: 60000,
+                defaultQueryTimeoutMs: 0,
+                keepAliveIntervalMs: 10000,
+            });
+
+            let qrGenerated = false;
+
+            newSock.ev.on('connection.update', async (update) => {
+                const { connection, lastDisconnect, qr } = update;
+
+                // Handle QR Code
+                if (qr && !qrGenerated) {
+                    qrGenerated = true;
+                    console.log('\n📱 SCAN QR CODE INI:');
+                    console.log('══════════════════════════════════════');
+                    qrcode.generate(qr, { small: true });
+                    console.log('══════════════════════════════════════');
+                    console.log('📲 Buka WhatsApp → Settings → Linked Devices');
+                    console.log('📲 Pilih "Link a Device"');
+                    console.log('📷 Scan QR code di atas');
+                    console.log('══════════════════════════════════════\n');
+                }
+
+                // Handle connection open
+                if (connection === 'open') {
+                    isConnected = true;
+                    reconnectAttempts = 0;
+                    sock = newSock;
+                    
+                    const user = newSock.user;
+                    const connectedNumber = user?.id?.split(':')[0] || 'Unknown';
+                    
+                    console.log(`\n✅ BERHASIL TERHUBUNG KE WHATSAPP!`);
+                    console.log(`📱 Nomor: ${connectedNumber}`);
+                    console.log('🤖 Bot siap menerima perintah!\n');
+                    
+                    // Kirim pesan ke owner
+                    try {
+                        await newSock.sendMessage(`${ownerNumber}@s.whatsapp.net`, {
+                            text: `🤖 *${botName} AKTIF!*\n\nTerhubung sebagai: ${connectedNumber}\nKetik ${prefix}menu untuk melihat commands`
+                        });
+                    } catch (e) {
+                        // Skip jika tidak bisa kirim pesan
+                    }
+                    
+                    resolve(newSock);
+                }
+
+                // Handle connection close
+                if (connection === 'close') {
+                    const statusCode = lastDisconnect?.error?.output?.statusCode;
+                    
+                    if (isConnected) {
+                        console.log('❌ Koneksi terputus...');
+                        isConnected = false;
+                    }
+
+                    // Jangan reconnect jika session expired (401)
+                    if (statusCode === 401) {
+                        console.log('🔑 Session expired, perlu login ulang');
+                        // Hapus session yang expired
+                        if (fs.existsSync(sessionPath)) {
+                            fs.rmSync(sessionPath, { recursive: true, force: true });
+                        }
+                        reject(new Error('Session expired'));
+                        return;
+                    }
+
+                    // Coba reconnect dengan limit
+                    if (reconnectAttempts < maxReconnectAttempts) {
+                        reconnectAttempts++;
+                        console.log(`🔄 Mencoba reconnect... (${reconnectAttempts}/${maxReconnectAttempts})`);
+                        await delay(5000); // Tunggu 5 detik sebelum reconnect
+                        connectToWhatsApp().then(resolve).catch(reject);
+                    } else {
+                        console.log('❌ Gagal reconnect setelah beberapa percobaan');
+                        console.log('💡 Silakan restart bot manual');
+                        reject(new Error('Max reconnect attempts reached'));
+                    }
+                }
+            });
+
+            newSock.ev.on('creds.update', saveCreds);
+            
+            // Handle messages
+            newSock.ev.on('messages.upsert', async (m) => {
+                await messageHandler(newSock, m);
+            });
+
+        } catch (error) {
+            console.log('❌ Connection error:', error.message);
+            reject(error);
         }
-
-        const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
-
-        const newSock = makeWASocket({
-            auth: state,
-            logger: pino({ level: 'fatal' }), // Hanya error fatal yang ditampilkan
-            printQRInTerminal: false, // Nonaktifkan QR bawaan
-        });
-
-        let isConnected = false;
-        let reconnectAttempts = 0;
-        const maxReconnectAttempts = 5;
-
-        newSock.ev.on('connection.update', async (update) => {
-            const { connection, lastDisconnect, qr } = update;
-
-            // Tampilkan QR code
-            if (qr) {
-                console.log('\n📱 SCAN QR CODE INI:');
-                console.log('══════════════════════════════════════');
-                qrcode.generate(qr, { small: true });
-                console.log('══════════════════════════════════════');
-                console.log('📲 Buka WhatsApp → Settings → Linked Devices → Link a Device');
-                console.log('📷 Scan QR code di atas');
-                console.log('══════════════════════════════════════\n');
-            }
-
-            if (connection === 'open') {
-                isConnected = true;
-                reconnectAttempts = 0;
-                sock = newSock;
-                
-                const user = newSock.user;
-                const connectedNumber = user?.id?.split(':')[0] || 'Unknown';
-                
-                console.log(`\n✅ BERHASIL TERHUBUNG!`);
-                console.log(`📱 Nomor: ${connectedNumber}`);
-                
-                // Kirim pesan ke owner
-                try {
-                    await newSock.sendMessage(`${ownerNumber}@s.whatsapp.net`, {
-                        text: `🤖 *${botName} AKTIF!*\n\nTerhubung sebagai: ${connectedNumber}\nKetik ${prefix}menu`
-                    });
-                } catch (e) {
-                    // Skip jika tidak bisa kirim pesan
-                }
-            }
-
-            if (connection === 'close') {
-                if (isConnected) {
-                    console.log('❌ Koneksi terputus, mencoba reconnect...');
-                    isConnected = false;
-                }
-
-                const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== 401;
-                
-                if (shouldReconnect && reconnectAttempts < maxReconnectAttempts) {
-                    reconnectAttempts++;
-                    console.log(`🔄 Mencoba reconnect... (${reconnectAttempts}/${maxReconnectAttempts})`);
-                    await delay(3000);
-                    connectToWhatsApp();
-                } else if (reconnectAttempts >= maxReconnectAttempts) {
-                    console.log('❌ Gagal reconnect setelah beberapa percobaan');
-                    console.log('💡 Silakan restart bot');
-                }
-            }
-        });
-
-        newSock.ev.on('creds.update', saveCreds);
-        
-        // Handle messages
-        newSock.ev.on('messages.upsert', async (m) => {
-            await messageHandler(newSock, m);
-        });
-
-        return newSock;
-    } catch (error) {
-        console.log('❌ Connection error:', error.message);
-        throw error;
-    }
+    });
 }
 
 // === SIMPLE CECAN FUNCTION ===
@@ -405,16 +430,26 @@ async function initialize() {
 
         console.log('🔄 Connecting to WhatsApp...\n');
         
-        // Connect to WhatsApp
-        await connectToWhatsApp();
+        // Connect to WhatsApp dengan timeout
+        const connectionPromise = connectToWhatsApp();
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Connection timeout')), 30000);
+        });
+
+        await Promise.race([connectionPromise, timeoutPromise]);
         
         console.log('✅ Bot ready!');
         
     } catch (error) {
         console.log('❌ Failed to initialize:', error.message);
-        console.log('🔄 Restarting in 10 seconds...');
-        await delay(10000);
-        process.exit(1);
+        
+        if (error.message.includes('Session expired') || error.message.includes('Max reconnect attempts')) {
+            console.log('💡 Silakan jalankan "npm start" lagi untuk login ulang');
+        } else {
+            console.log('🔄 Restarting in 10 seconds...');
+            await delay(10000);
+            process.exit(1);
+        }
     }
 }
 
