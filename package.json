@@ -1,28 +1,19 @@
 {
   "name": "xis-core-bot",
   "version": "2025.1.0",
-  "description": "XIS CORE SYSTEMS - WhatsApp Multi-Device Bot",
+  "description": "WhatsApp Bot MD by 小舞 Ga",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js",
-    "test": "node --check index.js"
+    "dev": "nodemon index.js"
   },
-  "keywords": [
-    "whatsapp",
-    "bot",
-    "multi-device",
-    "automation"
-  ],
-  "author": "小舞 Ga",
-  "license": "MIT",
   "dependencies": {
-    "@whiskeysockets/baileys": "^6.5.0",
-    "axios": "^1.6.2",
-    "pino": "^8.15.3",
+    "@whiskeysockets/baileys": "^6.4.0",
+    "axios": "^1.6.0",
+    "pino": "^8.15.0",
     "qrcode-terminal": "^0.12.0"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   }
 }
