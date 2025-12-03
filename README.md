@@ -8,7 +8,7 @@
 ![Status](https://img.shields.io/badge/Status-Online-success?style=for-the-badge)
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/WhiskeySockets/Baileys/refs/heads/master/Media/logo.png" width="200" alt="Baileys" />
+  <img src="https://raw.githubusercontent.com/WhiskeySockets/Baileys/refs/heads/master/Media/logo.png" width="120" alt="Baileys" />
 </p>
 
 **WhatsApp Multi-Device Bot dengan fitur AI, media downloader, dan management grup lengkap**
